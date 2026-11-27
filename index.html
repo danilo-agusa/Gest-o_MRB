@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2D6A9F">
+<title>AGI · Gestão de Ponto</title>
+<style>
+:root{--bg:#EEF1F5;--card:#fff;--borda:#D5DBE3;--txt:#1F2933;--sub:#66727F;--topo:#2D6A9F;--ok:#2B8A3E;--erro:#C92A2A;--aviso:#B26A00;--chip:#E8ECF1}
+@media (prefers-color-scheme:dark){:root{--bg:#16191D;--card:#20252B;--borda:#333A43;--txt:#E6EAEE;--sub:#9AA5B1;--ok:#51CF66;--erro:#FF6B6B;--aviso:#FFB454;--chip:#333A43}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:"Segoe UI",system-ui,-apple-system,Roboto,sans-serif;font-size:15px}
+header{background:var(--topo);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0}header small{display:block;opacity:.85;font-weight:400;font-size:12px}
+button{font:inherit;cursor:pointer}
+header button{background:transparent;border:1px solid rgba(255,255,255,.5);color:#fff;border-radius:8px;padding:6px 12px}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:14px}
+.barra{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.barra .esp{flex:1}
+.nav{display:flex;align-items:center;gap:8px}
+.nav button,.bt{border:1px solid var(--borda);background:var(--card);color:var(--txt);border-radius:8px;padding:8px 14px}
+.bt.pri{background:var(--topo);border-color:var(--topo);color:#fff;font-weight:600}
+.titulo-folha{font-size:20px;font-weight:700;min-width:210px;text-align:center}
+.periodo{color:var(--sub);font-size:13px;text-align:center}
+select,input[type=text],input[type=email],input[type=password]{padding:9px 10px;border:1px solid var(--borda);border-radius:8px;background:var(--card);color:var(--txt);font:inherit}
+label{font-size:13px;color:var(--sub);display:block;margin-bottom:3px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:12px 14px}
+.kpi b{display:block;font-size:24px;margin-top:2px}.kpi span{color:var(--sub);font-size:13px}
+h2{font-size:16px;margin:0}
+.pessoa{padding:0;overflow:hidden}
+.pessoa>.cab{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 16px;background:var(--chip);flex-wrap:wrap}
+.pessoa .res{color:var(--sub);font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 10px;text-align:center;border-bottom:1px solid var(--borda);font-variant-numeric:tabular-nums}
+th{font-size:12px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+td.esq,th.esq{text-align:left}
+tr.dia{cursor:pointer}tr.dia:hover{background:var(--chip)}
+tr.det td{background:var(--bg);text-align:left;padding:10px 16px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--sub);margin:0 2px;white-space:nowrap}
+.tag.ok{background:rgba(43,138,62,.16);color:var(--ok)}.tag.just{background:rgba(178,106,0,.18);color:var(--aviso)}.tag.inc{background:rgba(201,42,42,.14);color:var(--erro)}
+.det ul{list-style:none;margin:0;padding:0}.det li{padding:4px 0;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.det img{height:70px;border-radius:6px;cursor:zoom-in;border:1px solid var(--borda)}
+.msg{margin-top:10px;font-size:14px}.erro{color:var(--erro)}.ok{color:var(--ok)}
+.vazio{padding:24px;text-align:center;color:var(--sub)}
+.oculto{display:none!important}
+#login{max-width:380px;margin:40px auto}
+#login input{width:100%;margin-bottom:10px}
+.pri.largo{width:100%;padding:12px}
+.email{display:grid;grid-template-columns:1fr;gap:10px;margin-top:12px}
+.demo{background:var(--aviso);color:#fff;text-align:center;font-size:13px;padding:4px}
+.zoom{position:fixed;inset:0;background:rgba(0,0,0,.8);display:flex;align-items:center;justify-content:center;z-index:9}.zoom img{max-width:92vw;max-height:92vh;border-radius:8px}
+@media print{
+  header,.nav,.barra .bt,#painelEmail,#filtros,.demo,#btnsExport{display:none!important}
+  body{background:#fff;color:#000}.card,.kpi{border-color:#999;break-inside:avoid}
+  @page{size:A4 portrait;margin:14mm}
+  main{padding:0;max-width:none}
+  tr.det{display:none}.pessoa>.cab{background:#eee}
+  .pessoa{break-after:page;border:0;border-radius:0}.pessoa:last-of-type{break-after:auto}
+  table{font-size:11px}th,td{padding:5px 6px}.tag{border:1px solid #bbb;background:#fff!important;color:#000!important}
+  .kpis{grid-template-columns:repeat(5,1fr);gap:6px}.kpi b{font-size:18px}
+  #cabImpressao{display:block!important;border-bottom:3px solid #2D6A9F;padding-bottom:6px}
+  #cabImpressao h2{font-size:20px;color:#2D6A9F}#cabImpressao .periodo{text-align:left;color:#444}
+  .assin{display:flex!important;gap:40px;margin:44px 8px 0}.assin div{flex:1;border-top:1px solid #444;padding-top:4px;font-size:11px;color:#444;text-align:center}
+  #rodapeImp{display:block!important;margin-top:14px;font-size:10px;color:#555}
+}
+.assin,#rodapeImp{display:none}
+#cabImpressao{display:none;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div id="demo" class="demo oculto">MODO DEMONSTRAÇÃO · dados fictícios, nada é gravado nem enviado</div>
+<header>
+  <h1>AGI · Gestão de Ponto<small id="quem"></small></h1>
+  <button id="sair" class="oculto">Sair</button>
+</header>
+<main>
+  <section id="login" class="card oculto">
+    <h2>Entrar</h2>
+    <label for="email" style="margin-top:12px">E-mail</label><input id="email" type="email" autocomplete="username">
+    <label for="senha">Senha</label><input id="senha" type="password" autocomplete="current-password">
+    <button id="entrar" class="bt pri largo">Entrar</button>
+    <div id="msgLogin" class="msg erro"></div>
+  </section>
+
+  <section id="painel" class="oculto">
+    <div id="cabImpressao"><h2>Relatório de ponto</h2><div class="periodo" id="subImp"></div></div>
+    <div class="card" id="filtros">
+      <div class="barra">
+        <div class="nav">
+          <button id="ant" title="Folha anterior">◀</button>
+          <div><div class="titulo-folha" id="tituloFolha"></div><div class="periodo" id="periodo"></div></div>
+          <button id="prox" title="Próxima folha">▶</button>
+        </div>
+        <div class="esp"></div>
+        <div><label for="pessoa">Pessoa</label><select id="pessoa"><option value="">Todas</option></select></div>
+      </div>
+    </div>
+
+    <div class="kpis" id="kpis"></div>
+    <div id="lista"></div>
+
+    <div class="card" id="btnsExport">
+      <div class="barra">
+        <button id="xlsx" class="bt">⬇ Baixar Excel</button>
+        <button id="imprimir" class="bt">🖨 Imprimir / salvar PDF</button>
+        <div class="esp"></div>
+        <button id="abrirEmail" class="bt pri">✉ Enviar por e-mail</button>
+      </div>
+      <div id="painelEmail" class="email oculto">
+        <div><label for="para">Para (separe por vírgula)</label><input id="para" type="text" style="width:100%" placeholder="gerente@empresa.com, rh@empresa.com"></div>
+        <div><label for="assunto">Assunto</label><input id="assunto" type="text" style="width:100%"></div>
+        <div><button id="disparar" class="bt pri">Enviar agora</button></div>
+        <div class="periodo" style="text-align:left">Abre o seu e-mail (Outlook, Gmail…) com o Excel anexado ou, se o aparelho não permitir, baixa o arquivo e preenche a mensagem para você anexar.</div>
+      </div>
+      <div id="msgEx" class="msg"></div>
+    </div>
+  </section>
+</main>
+<div id="zoom" class="zoom oculto"><img alt="Foto da entrada"></div>
+
+<script type="module">
+/* ============ CONFIGURAÇÃO ============ */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyDEQ44YQIQ2BU2ZmHKAi_GpIdJmirXpjZs",
+  authDomain: "agi-apps-4935a.firebaseapp.com",
+  projectId: "agi-apps-4935a",
+  appId: "1:777497555994:web:65b7e4d7089ae9a78acda3",
+};
+const FUSO = "America/Sao_Paulo";
+const ALMOCO_PADRAO_MIN = 60;      // igual ao app Jornada: horas = saída − entrada − 1 h fixa
+const TIPOS = [["entrada", "Entrada"], ["saida_almoco", "Saída almoço"], ["volta_almoco", "Volta almoço"], ["saida", "Saída"]];
+const NOME_TIPO = Object.fromEntries(TIPOS);
+const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const SDK = "10.12.2", EXCELJS = "https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js";
+
+const DEMO = new URLSearchParams(location.search).has("demo");
+const $ = (id) => document.getElementById(id);
+const fmtHora = (d) => d ? d.toLocaleTimeString("pt-BR", { timeZone: FUSO, hour: "2-digit", minute: "2-digit" }) : "—";
+const chaveDia = (d) => d.toLocaleDateString("sv-SE", { timeZone: FUSO });
+const fmtDia = (k) => { const [a, m, d] = k.split("-"); const w = new Date(`${k}T12:00:00-03:00`).toLocaleDateString("pt-BR", { timeZone: FUSO, weekday: "short" }); return `${d}/${m} · ${w.replace(".", "")}`; };
+const fmtMin = (m) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+const pad = (n) => String(n).padStart(2, "0");
+
+/* ============ FOLHA (21 → 20, nome = mês em que termina) ============ */
+function folhaDe(ref) {        // ref: {a, m} (m 0-11) = mês em que a folha TERMINA
+  const ini = new Date(Date.UTC(ref.a, ref.m - 1, 21)), fim = new Date(Date.UTC(ref.a, ref.m, 20));
+  const t = (d) => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  const iniK = t(ini), fimK = t(fim);
+  return { nome: `Folha de ${MESES[((ref.m % 12) + 12) % 12]} ${fim.getUTCFullYear()}`, iniK, fimK,
+           de: new Date(`${iniK}T00:00:00-03:00`), ate: new Date(new Date(`${fimK}T00:00:00-03:00`).getTime() + 86400000),
+           texto: `${iniK.split("-").reverse().join("/")} a ${fimK.split("-").reverse().join("/")}` };
+}
+function folhaAtualRef() {
+  const [a, m, d] = chaveDia(new Date()).split("-").map(Number);
+  return d >= 21 ? { a, m: m } : { a, m: m - 1 };     // m já é "mês seguinte" em base 0 quando d>=21
+}
+let ref = folhaAtualRef();
+const mudarFolha = (n) => { ref = { a: ref.a, m: ref.m + n }; };
+
+/* ============ BACKEND ============ */
+async function criarBackendReal() {
+  const base = `https://www.gstatic.com/firebasejs/${SDK}/`;
+  const [{ initializeApp }, A, F] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-firestore.js")]);
+  const app = initializeApp(FIREBASE_CONFIG), auth = A.getAuth(app), db = F.getFirestore(app);
+  return {
+    onUser: (cb) => A.onAuthStateChanged(auth, cb),
+    login: (e, s) => A.signInWithEmailAndPassword(auth, e, s),
+    logout: () => A.signOut(auth),
+    async perfil(uid) { const s = await F.getDoc(F.doc(db, "usuarios", uid)); return s.exists() ? s.data() : null; },
+    async pessoas() { return (await F.getDocs(F.collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, nome: d.data().nome || d.data().email, status: d.data().status })).filter((p) => p.status === "aprovado"); },
+    async batidas(uid, de, ate) {
+      const q = F.query(F.collection(db, "ponto", uid, "batidas"), F.where("criado_em", ">=", F.Timestamp.fromDate(de)), F.where("criado_em", "<", F.Timestamp.fromDate(ate)), F.orderBy("criado_em"));
+      return (await F.getDocs(q)).docs.map((d) => ({ id: d.id, ...d.data(), criado_em: d.data().criado_em.toDate() }));
+    },
+  };
+}
+function criarBackendDemo() {
+  const pessoas = [{ uid: "a", nome: "Danilo Fornazza" }, { uid: "b", nome: "Maria Souza" }, { uid: "c", nome: "João Pereira" }];
+  const FOTO = "data:image/svg+xml;utf8," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='160' height='100'><rect width='160' height='100' fill='#9db4c8'/><rect x='55' y='25' width='50' height='75' fill='#5d7a93'/><text x='80' y='18' font-size='11' text-anchor='middle' fill='#fff'>foto da entrada</text></svg>");
+  const gerar = (p, i) => {
+    const out = [], hoje = new Date();
+    for (let k = 0; k < 60; k++) {
+      const d = new Date(hoje.getTime() - k * 86400000); const dow = d.getUTCDay();
+      if (dow === 0 || dow === 6 || (i === 2 && k % 7 === 3)) continue;
+      const dia = chaveDia(d), mk = (t, hh, mm, extra) => out.push({ id: `${dia}${t}`, tipo: t, metodo: "gps", distancia: 40 + (k * 7) % 80, precisao: 12 + k % 15, nome: p.nome, criado_em: new Date(`${dia}T${pad(hh)}:${pad(mm)}:00-03:00`), ...extra });
+      const home = (i === 1 && k % 5 === 2), foto = (i === 2 && k % 4 === 0);
+      const ex = home ? { metodo: "justificativa", justificativa: "Home Office", distancia: undefined, precisao: undefined } : foto ? { metodo: "foto", foto: FOTO, distancia: undefined } : {};
+      mk("entrada", 8 + (k % 2), 50 + (k % 9), ex); mk("saida_almoco", 12, k % 20, home ? ex : {}); mk("volta_almoco", 13, 5 + k % 12, home ? ex : {});
+      if (!(i === 2 && k === 2)) mk("saida", 18, 5 + (k * 3) % 40, ex);
+    }
+    return out;
+  };
+  const todas = Object.fromEntries(pessoas.map((p, i) => [p.uid, gerar(p, i)]));
+  let usuario = null, ouvinte = null;
+  return {
+    onUser: (cb) => { ouvinte = cb; setTimeout(() => cb(usuario), 0); },
+    login: async () => { usuario = { uid: "a", email: "demo@agi" }; ouvinte(usuario); },
+    logout: async () => { usuario = null; ouvinte(null); },
+    perfil: async () => ({ nome: "Danilo (demo)", area: "TI", status: "aprovado" }),
+    pessoas: async () => pessoas,
+    batidas: async (uid, de, ate) => todas[uid].filter((b) => b.criado_em >= de && b.criado_em < ate).sort((x, y) => x.criado_em - y.criado_em),
+  };
+}
+
+/* ============ DADOS → DIAS ============ */
+function montarDias(batidas) {
+  const porDia = new Map();
+  for (const b of batidas) { const k = chaveDia(b.criado_em); (porDia.get(k) || porDia.set(k, []).get(k)).push(b); }
+  return [...porDia.entries()].sort().map(([k, lista]) => {
+    const pega = (t, ultima) => { const x = lista.filter((b) => b.tipo === t); return x.length ? (ultima ? x[x.length - 1] : x[0]).criado_em : null; };
+    const e = pega("entrada"), sa = pega("saida_almoco"), va = pega("volta_almoco"), s = pega("saida", true);
+    const completo = !!(e && sa && va && s);
+    const min = e && s ? Math.max(0, Math.round((s - e) / 60000) - ALMOCO_PADRAO_MIN) : null;
+    return { dia: k, e, sa, va, s, completo, min, lista, justs: [...new Set(lista.filter((b) => b.metodo === "justificativa").map((b) => b.justificativa))],
+             metodos: [...new Set(lista.map((b) => b.metodo).filter((m) => m !== "simples"))] };
+  });
+}
+
+/* ============ TELA ============ */
+let B, folha, pessoas = [], dados = [];   // dados: [{pessoa, dias, resumo}]
+function tagMetodo(m, just) {
+  const t = document.createElement("span");
+  t.className = "tag " + (m === "justificativa" ? "just" : "ok");
+  t.textContent = m === "gps" ? "📍 local" : m === "foto" ? "📷 foto" : m === "simples" ? "✓ horário" : (just || "justificado");
+  return t;
+}
+async function carregar() {
+  folha = folhaDe(ref);
+  $("tituloFolha").textContent = folha.nome; $("periodo").textContent = folha.texto;
+  $("cabImpressao").firstChild.textContent = `Relatório de ponto · ${folha.nome}`; $("subImp").textContent = `Período ${folha.texto} · emitido em ${emissao()}${emissor ? " por " + emissor : ""}`;
+  $("lista").innerHTML = '<div class="card vazio">Carregando…</div>';
+  const alvo = $("pessoa").value ? pessoas.filter((p) => p.uid === $("pessoa").value) : pessoas;
+  try {
+    dados = await Promise.all(alvo.map(async (p) => {
+      const dias = montarDias(await B.batidas(p.uid, folha.de, folha.ate));
+      const total = dias.reduce((s, d) => s + (d.min || 0), 0);
+      return { pessoa: p, dias, resumo: { dias: dias.length, incompletos: dias.filter((d) => !d.completo).length,
+               justificados: dias.filter((d) => d.justs.length).length, min: total } };
+    }));
+  } catch (e) { $("lista").innerHTML = '<div class="card vazio erro">Não consegui carregar as batidas (sem permissão ou sem internet).</div>'; return; }
+  desenhar();
+}
+function desenhar() {
+  const T = dados.reduce((a, d) => ({ dias: a.dias + d.resumo.dias, inc: a.inc + d.resumo.incompletos, just: a.just + d.resumo.justificados, min: a.min + d.resumo.min }), { dias: 0, inc: 0, just: 0, min: 0 });
+  $("kpis").innerHTML = "";
+  for (const [rot, val] of [["Pessoas", dados.length], ["Dias com batida", T.dias], ["Horas trabalhadas", fmtMin(T.min)], ["Dias justificados", T.just], ["Dias incompletos", T.inc]]) {
+    const k = document.createElement("div"); k.className = "kpi"; k.innerHTML = `<span></span><b></b>`; k.firstChild.textContent = rot; k.lastChild.textContent = val; $("kpis").appendChild(k);
+  }
+  const lista = $("lista"); lista.innerHTML = "";
+  for (const { pessoa, dias, resumo } of dados) {
+    const box = document.createElement("div"); box.className = "card pessoa";
+    const cab = document.createElement("div"); cab.className = "cab";
+    const h = document.createElement("h2"); h.textContent = pessoa.nome;
+    const r = document.createElement("div"); r.className = "res";
+    r.textContent = `${resumo.dias} dia(s) · ${fmtMin(resumo.min)} trabalhadas · ${resumo.justificados} justificado(s) · ${resumo.incompletos} incompleto(s)`;
+    cab.append(h, r); box.appendChild(cab);
+    if (!dias.length) { const v = document.createElement("div"); v.className = "vazio"; v.textContent = "Nenhuma batida nesta folha."; box.appendChild(v); lista.appendChild(box); continue; }
+    const tb = document.createElement("table");
+    tb.innerHTML = "<thead><tr><th class='esq'>Dia</th><th>Entrada</th><th>Saída alm.</th><th>Volta alm.</th><th>Saída</th><th>Horas</th><th class='esq'>Origem</th></tr></thead>";
+    const corpo = document.createElement("tbody");
+    for (const d of dias) {
+      const tr = document.createElement("tr"); tr.className = "dia";
+      const c = (txt, cls) => { const td = document.createElement("td"); if (cls) td.className = cls; td.textContent = txt; tr.appendChild(td); return td; };
+      c(fmtDia(d.dia), "esq"); c(fmtHora(d.e)); c(fmtHora(d.sa)); c(fmtHora(d.va)); c(fmtHora(d.s)); c(d.min == null ? "—" : fmtMin(d.min));
+      const o = document.createElement("td"); o.className = "esq";
+      if (!d.completo) { const t = document.createElement("span"); t.className = "tag inc"; t.textContent = "incompleto"; o.appendChild(t); }
+      for (const m of d.metodos) o.appendChild(tagMetodo(m, m === "justificativa" ? d.justs.join(", ") : ""));
+      tr.appendChild(o); corpo.appendChild(tr);
+      const det = document.createElement("tr"); det.className = "det oculto"; const td = document.createElement("td"); td.colSpan = 7;
+      const ul = document.createElement("ul");
+      for (const b of d.lista) {
+        const li = document.createElement("li");
+        const a = document.createElement("span"); a.textContent = `${fmtHora(b.criado_em)} · ${NOME_TIPO[b.tipo] || b.tipo}`; li.appendChild(a);
+        li.appendChild(tagMetodo(b.metodo, b.justificativa));
+        if (b.distancia != null) { const x = document.createElement("span"); x.className = "periodo"; x.textContent = `a ${b.distancia} m do escritório (GPS ±${b.precisao ?? "?"} m)`; li.appendChild(x); }
+        if (b.foto) { const im = document.createElement("img"); im.src = b.foto; im.alt = "Foto da entrada"; im.onclick = (e) => { e.stopPropagation(); $("zoom").firstChild.src = b.foto; $("zoom").classList.remove("oculto"); }; li.appendChild(im); }
+        ul.appendChild(li);
+      }
+      td.appendChild(ul); det.appendChild(td); corpo.appendChild(det);
+      tr.onclick = () => det.classList.toggle("oculto");
+    }
+    tb.appendChild(corpo); box.appendChild(tb);
+    const as = document.createElement("div"); as.className = "assin";
+    for (const t of [pessoa.nome, "Gestor / RH"]) { const x = document.createElement("div"); x.textContent = t; as.appendChild(x); }
+    box.appendChild(as); lista.appendChild(box);
+  }
+  $("assunto").value = `Relatório de ponto · ${folha.nome}`;
+  let rp = $("rodapeImp"); if (!rp) { rp = document.createElement("div"); rp.id = "rodapeImp"; document.querySelector("main").appendChild(rp); }
+  rp.textContent = "Batidas registradas pelo celular com horário do servidor e confirmação por localização, foto ou justificativa. Registros não editáveis. Horas = saída − entrada − 1 h de almoço padrão.";
+}
+$("zoom").onclick = () => $("zoom").classList.add("oculto");
+$("ant").onclick = () => { mudarFolha(-1); carregar(); };
+$("prox").onclick = () => { mudarFolha(+1); carregar(); };
+$("pessoa").onchange = carregar;
+
+/* ============ EXPORTAR ============ */
+function carregarExcelJS() {
+  if (window.ExcelJS) return Promise.resolve();
+  return new Promise((ok, falha) => { const el = document.createElement("script"); el.src = EXCELJS; el.onload = ok; el.onerror = () => falha(new Error("exceljs")); document.head.appendChild(el); });
+}
+const AZUL = "FF2D6A9F", FAIXA = "FFE8F0F8", CINZA = "FF66727F", LINHA = "FFD5DBE3", VERDE = "FF2B8A3E", AMBAR = "FFB26A00", VERM = "FFC92A2A", ZEBRA = "FFF7F9FB";
+const FINA = { style: "thin", color: { argb: LINHA } };
+const BORDAS = { top: FINA, left: FINA, bottom: FINA, right: FINA };
+const DIAS_SEM = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+const NOME_METODO = { gps: "Localização", foto: "Foto", justificativa: "Justificativa", simples: "Registro simples" };
+const minDoDia = (d) => { if (!d) return null; const [h, m] = fmtHora(d).split(":").map(Number); return h * 60 + m; };
+const emissao = () => new Date().toLocaleString("pt-BR", { timeZone: FUSO, dateStyle: "short", timeStyle: "short" });
+let emissor = "";
+
+function blocosDaFolha(mapa) {          // semanas (seg–sex) dentro da folha, como no app Jornada
+  const out = []; let atual = null;
+  const [ya, ma, da] = folha.iniK.split("-").map(Number), [yb, mb, db] = folha.fimK.split("-").map(Number);
+  for (let t = Date.UTC(ya, ma - 1, da); t <= Date.UTC(yb, mb - 1, db); t += 86400000) {
+    const d = new Date(t), w = d.getUTCDay(), k = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+    if ((w === 0 || w === 6) && !mapa.has(k)) continue;
+    const seg = t - ((w + 6) % 7) * 86400000;
+    if (!atual || atual.seg !== seg) { atual = { seg, itens: [] }; out.push(atual); }
+    atual.itens.push({ k, d, w, info: mapa.get(k) });
+  }
+  return out;
+}
+const celula = (ws, ref, valor, o = {}) => {
+  const c = ws.getCell(ref); c.value = valor;
+  c.font = { name: "Segoe UI", size: o.size || 10, bold: !!o.bold, italic: !!o.italic, color: { argb: o.cor || "FF1F2933" } };
+  c.alignment = { vertical: "middle", horizontal: o.al || "center", wrapText: !!o.quebra, indent: o.indent || 0 };
+  if (o.fundo) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: o.fundo } };
+  if (o.borda !== false) c.border = BORDAS;
+  if (o.fmt) c.numFmt = o.fmt;
+  return c;
+};
+const nomeAba = (nome, usados) => { let n = nome.replace(/[\\\/\?\*\[\]:]/g, " ").slice(0, 28).trim() || "Pessoa"; let i = 2, base = n; while (usados.has(n.toLowerCase())) n = `${base.slice(0, 25)} ${i++}`; usados.add(n.toLowerCase()); return n; };
+
+async function montarExcel() {
+  await carregarExcelJS();
+  const wb = new ExcelJS.Workbook(); wb.creator = emissor || "AGI Ponto"; wb.created = new Date();
+  const usados = new Set(["resumo", "batidas"]);
+
+  /* ---------- Resumo (capa) ---------- */
+  const rs = wb.addWorksheet("Resumo", { views: [{ showGridLines: false }], pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+  [30, 14, 16, 16, 14, 14, 16, 16, 16].forEach((w, i) => { rs.getColumn(i + 1).width = w; });
+  celula(rs, "A1", "Relatório de ponto eletrônico", { size: 18, bold: true, cor: AZUL, al: "left", borda: false });
+  celula(rs, "A2", `${folha.nome}  ·  ${folha.texto}`, { size: 12, bold: true, al: "left", borda: false });
+  celula(rs, "A3", `Emitido em ${emissao()}${emissor ? " por " + emissor : ""}`, { size: 10, cor: CINZA, al: "left", borda: false });
+  const cab = ["Pessoa", "Dias com batida", "Horas trabalhadas", "Média por dia", "Dias justificados", "Dias incompletos", "Batidas por localização", "Batidas por foto", "Batidas justificadas"];
+  cab.forEach((t, i) => celula(rs, rs.getRow(5).getCell(i + 1).address, t, { bold: true, cor: "FFFFFFFF", fundo: AZUL, quebra: true, al: i ? "center" : "left", indent: i ? 0 : 1 }));
+  rs.getRow(5).height = 32;
+  let r = 6, totDias = 0, totMin = 0, totJ = 0, totI = 0; const t3 = [0, 0, 0];
+  for (const { pessoa, dias, resumo } of dados) {
+    const cont = { gps: 0, foto: 0, justificativa: 0 };
+    dias.forEach((d) => d.lista.forEach((b) => { if (cont[b.metodo] != null) cont[b.metodo]++; }));
+    const fundo = (r % 2) ? undefined : ZEBRA;
+    celula(rs, `A${r}`, pessoa.nome, { al: "left", indent: 1, bold: true, fundo });
+    celula(rs, `B${r}`, resumo.dias, { fundo });
+    celula(rs, `C${r}`, resumo.min / 1440, { fmt: "[hh]:mm", fundo });
+    celula(rs, `D${r}`, resumo.dias ? Math.round(resumo.min / resumo.dias) / 1440 : null, { fmt: "[hh]:mm", fundo });
+    celula(rs, `E${r}`, resumo.justificados, { fundo, cor: resumo.justificados ? AMBAR : undefined });
+    celula(rs, `F${r}`, resumo.incompletos, { fundo, cor: resumo.incompletos ? VERM : undefined, bold: !!resumo.incompletos });
+    celula(rs, `G${r}`, cont.gps, { fundo }); celula(rs, `H${r}`, cont.foto, { fundo }); celula(rs, `I${r}`, cont.justificativa, { fundo });
+    totDias += resumo.dias; totMin += resumo.min; totJ += resumo.justificados; totI += resumo.incompletos; t3[0] += cont.gps; t3[1] += cont.foto; t3[2] += cont.justificativa; r++;
+  }
+  if (dados.length > 1) {
+    const f = { bold: true, fundo: FAIXA };
+    celula(rs, `A${r}`, "Total", { ...f, al: "left", indent: 1 }); celula(rs, `B${r}`, totDias, f);
+    celula(rs, `C${r}`, totMin / 1440, { ...f, fmt: "[hh]:mm" }); celula(rs, `D${r}`, totDias ? Math.round(totMin / totDias) / 1440 : null, { ...f, fmt: "[hh]:mm" });
+    celula(rs, `E${r}`, totJ, f); celula(rs, `F${r}`, totI, f); celula(rs, `G${r}`, t3[0], f); celula(rs, `H${r}`, t3[1], f); celula(rs, `I${r}`, t3[2], f); r++;
+  }
+  r += 1;
+  celula(rs, `A${r}`, "Como ler este relatório", { bold: true, cor: AZUL, al: "left", borda: false, size: 11 }); r++;
+  for (const t of ["As batidas são feitas pelo celular e gravadas com o horário do servidor (não pelo relógio do aparelho).",
+                   "Cada batida é confirmada por localização (dentro do raio do escritório), por foto da entrada ou por justificativa (Home Office, Vistorias, Viagem…).",
+                   "Os registros não podem ser editados nem apagados. A aba “Batidas” traz o registro original, batida por batida.",
+                   `Horas trabalhadas = saída − entrada − ${ALMOCO_PADRAO_MIN / 60} h de almoço padrão. Dias sem as quatro batidas aparecem como incompletos.`,
+                   "Cada pessoa tem uma aba com a folha por semana (de segunda a sexta)."]) {
+    celula(rs, `A${r}`, "•  " + t, { al: "left", borda: false, cor: CINZA }); r++;
+  }
+
+  /* ---------- uma aba por pessoa ---------- */
+  for (const { pessoa, dias, resumo } of dados) {
+    const ws = wb.addWorksheet(nomeAba(pessoa.nome, usados), { views: [{ showGridLines: false, state: "frozen", ySplit: 8 }],
+      pageSetup: { orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9, margins: { left: .4, right: .4, top: .5, bottom: .6, header: .3, footer: .3 } } });
+    ws.headerFooter = { oddFooter: `&L${pessoa.nome} · ${folha.nome}&RPágina &P de &N` };
+    [12, 7, 10, 12, 12, 10, 14, 11, 16, 34].forEach((w, i) => { ws.getColumn(i + 1).width = w; });
+    celula(ws, "A1", "Relatório de ponto", { size: 16, bold: true, cor: AZUL, al: "left", borda: false });
+    celula(ws, "A2", pessoa.nome, { size: 12, bold: true, al: "left", borda: false });
+    celula(ws, "A3", `${folha.nome}  ·  ${folha.texto}  ·  emitido em ${emissao()}`, { size: 9, cor: CINZA, al: "left", borda: false });
+    const kp = [["A", "B", "Dias com batida", resumo.dias, null], ["C", "D", "Horas trabalhadas", resumo.min / 1440, "[hh]:mm"], ["E", "G", "Dias justificados", resumo.justificados, null], ["H", "J", "Dias incompletos", resumo.incompletos, null]];
+    for (const [c1, c2, rot, val, fmt] of kp) {
+      ws.mergeCells(`${c1}5:${c2}5`); ws.mergeCells(`${c1}6:${c2}6`);
+      celula(ws, `${c1}5`, rot, { size: 9, cor: CINZA, al: "left", borda: false });
+      celula(ws, `${c1}6`, val, { size: 15, bold: true, al: "left", borda: false, fmt, cor: (rot.includes("incompletos") && val) ? VERM : undefined });
+    }
+    ["Data", "Dia", "Entrada", "Saída almoço", "Volta almoço", "Saída", "Horas trabalhadas", "Almoço", "Origem", "Observação"].forEach((t, i) =>
+      celula(ws, ws.getRow(8).getCell(i + 1).address, t, { bold: true, cor: "FFFFFFFF", fundo: AZUL, quebra: true }));
+    ws.getRow(8).height = 30;
+    const mapa = new Map(dias.map((d) => [d.dia, d])); let linha = 9, n = 0; const totais = [];
+    for (const bl of blocosDaFolha(mapa)) {
+      n++; const a = bl.itens[0].d, z = bl.itens[bl.itens.length - 1].d, fd = (d) => `${pad(d.getUTCDate())}/${pad(d.getUTCMonth() + 1)}`;
+      const faixa = linha; ws.getRow(linha).height = 20;
+      for (let c = 1; c <= 10; c++) celula(ws, ws.getRow(linha).getCell(c).address, null, { fundo: FAIXA });
+      ws.getCell(`A${linha}`).value = `Semana ${n}  ·  ${fd(a)} a ${fd(z)}`; ws.getCell(`A${linha}`).font = { name: "Segoe UI", size: 10, bold: true, color: { argb: AZUL } }; ws.getCell(`A${linha}`).alignment = { horizontal: "left", vertical: "middle" };
+      ws.getCell(`F${linha}`).value = "Total da semana"; ws.getCell(`F${linha}`).font = { name: "Segoe UI", size: 9, color: { argb: CINZA } }; ws.getCell(`F${linha}`).alignment = { horizontal: "right" };
+      linha++; const ini = linha; let somaSem = 0;
+      for (const { d, w, info, k } of bl.itens) {
+        const sem = !info; ws.getRow(linha).height = 18;
+        celula(ws, `A${linha}`, new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())), { fmt: "dd/mm/yyyy", cor: sem ? CINZA : undefined });
+        celula(ws, `B${linha}`, DIAS_SEM[w], { cor: CINZA });
+        for (const [col, v] of [["C", info?.e], ["D", info?.sa], ["E", info?.va], ["F", info?.s]]) celula(ws, `${col}${linha}`, v ? minDoDia(v) / 1440 : null, { fmt: "hh:mm" });
+        celula(ws, `G${linha}`, info?.min != null ? info.min / 1440 : null, { fmt: "[hh]:mm", bold: true });
+        const alm = info?.sa && info?.va ? Math.round((info.va - info.sa) / 60000) : null;
+        celula(ws, `H${linha}`, alm != null ? alm / 1440 : null, { fmt: "hh:mm", cor: CINZA });
+        const met = info ? info.metodos.map((m) => NOME_METODO[m] || m).join(" + ") : "Sem registro";
+        const temJust = info && info.metodos.includes("justificativa");
+        celula(ws, `I${linha}`, met, { italic: sem, cor: sem ? CINZA : temJust ? AMBAR : VERDE });
+        const obs = []; if (info && !info.completo) obs.push("Batidas incompletas"); if (info?.justs.length) obs.push(info.justs.join(", "));
+        celula(ws, `J${linha}`, obs.join(" · ") || null, { al: "left", indent: 1, cor: info && !info.completo ? VERM : CINZA });
+        somaSem += info?.min || 0; linha++;
+      }
+      const fim = linha - 1;
+      const tc = ws.getCell(`G${faixa}`); tc.value = { formula: `SUM(G${ini}:G${fim})`, result: somaSem / 1440 };
+      tc.numFmt = "[hh]:mm"; tc.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: AZUL } }; tc.alignment = { horizontal: "center", vertical: "middle" };
+      totais.push({ ref: `G${faixa}`, v: somaSem });
+    }
+    const tot = totais.reduce((x, y) => x + y.v, 0);
+    for (let c = 1; c <= 10; c++) { const cel = ws.getRow(linha).getCell(c); cel.border = { top: { style: "medium", color: { argb: AZUL } } }; }
+    ws.getCell(`F${linha}`).value = "Total da folha"; ws.getCell(`F${linha}`).font = { name: "Segoe UI", size: 10, bold: true }; ws.getCell(`F${linha}`).alignment = { horizontal: "right", vertical: "middle" };
+    const g = ws.getCell(`G${linha}`); g.value = { formula: totais.map((x) => x.ref).join("+") || "0", result: tot / 1440 }; g.numFmt = "[hh]:mm";
+    g.font = { name: "Segoe UI", size: 11, bold: true, color: { argb: AZUL } }; g.alignment = { horizontal: "center", vertical: "middle" }; ws.getRow(linha).height = 22;
+    linha += 3;
+    for (const [c1, c2, rot] of [["A", "D", pessoa.nome], ["F", "J", "Gestor / RH"]]) {
+      ws.mergeCells(`${c1}${linha}:${c2}${linha}`); ws.mergeCells(`${c1}${linha + 1}:${c2}${linha + 1}`);
+      ws.getCell(`${c1}${linha}`).border = { bottom: { style: "thin", color: { argb: "FF999999" } } };
+      celula(ws, `${c1}${linha + 1}`, rot, { size: 9, cor: CINZA, borda: false });
+    }
+  }
+
+  /* ---------- Batidas (registro original) ---------- */
+  const bs = wb.addWorksheet("Batidas", { views: [{ state: "frozen", ySplit: 1, showGridLines: false }], pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0, paperSize: 9 } });
+  [26, 12, 14, 15, 14, 18, 14, 26].forEach((w, i) => { bs.getColumn(i + 1).width = w; });
+  ["Pessoa", "Data", "Hora (servidor)", "Tipo", "Método", "Distância do escritório", "Precisão do GPS", "Justificativa"].forEach((t, i) =>
+    celula(bs, bs.getRow(1).getCell(i + 1).address, t, { bold: true, cor: "FFFFFFFF", fundo: AZUL, quebra: true }));
+  bs.getRow(1).height = 30; let lb = 2;
+  for (const { pessoa, dias } of dados) for (const d of dias) for (const b of d.lista) {
+    const [y, m, dd] = d.dia.split("-").map(Number), fundo = (lb % 2) ? undefined : ZEBRA;
+    celula(bs, `A${lb}`, pessoa.nome, { al: "left", indent: 1, fundo });
+    celula(bs, `B${lb}`, new Date(Date.UTC(y, m - 1, dd)), { fmt: "dd/mm/yyyy", fundo });
+    celula(bs, `C${lb}`, minDoDia(b.criado_em) / 1440, { fmt: "hh:mm", fundo });
+    celula(bs, `D${lb}`, NOME_TIPO[b.tipo] || b.tipo, { fundo });
+    celula(bs, `E${lb}`, NOME_METODO[b.metodo] || b.metodo, { fundo, cor: b.metodo === "justificativa" ? AMBAR : VERDE });
+    celula(bs, `F${lb}`, b.distancia != null ? `${b.distancia} m` : null, { fundo }); celula(bs, `G${lb}`, b.precisao != null ? `±${b.precisao} m` : null, { fundo });
+    celula(bs, `H${lb}`, b.justificativa || null, { al: "left", indent: 1, fundo }); lb++;
+  }
+  bs.autoFilter = { from: "A1", to: `H${Math.max(lb - 1, 1)}` };
+
+  const bytes = await wb.xlsx.writeBuffer();
+  const nomeArq = `Relatorio_ponto_${folha.nome.replace("Folha de ", "").replace(" ", "_")}.xlsx`;
+  return new File([bytes], nomeArq, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+function baixar(arq) { const a = document.createElement("a"); a.href = URL.createObjectURL(arq); a.download = arq.name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+const aviso = (txt, cls = "ok") => { $("msgEx").className = "msg " + cls; $("msgEx").textContent = txt; };
+
+$("xlsx").onclick = async () => {
+  try { baixar(await montarExcel()); aviso("✓ Excel baixado."); } catch { aviso("Não consegui gerar o Excel (sem internet para carregar a biblioteca?).", "erro"); }
+};
+$("imprimir").onclick = () => window.print();
+$("abrirEmail").onclick = () => { $("painelEmail").classList.toggle("oculto"); try { $("para").value = localStorage.getItem("ponto_para") || ""; } catch {} };
+function corpoEmail() {
+  const linhas = [`Segue o relatório de ponto da ${folha.nome} (${folha.texto}).`, ""];
+  for (const { pessoa, resumo: r } of dados) linhas.push(`• ${pessoa.nome}: ${r.dias} dia(s), ${fmtMin(r.min)} trabalhadas, ${r.justificados} justificado(s), ${r.incompletos} incompleto(s)`);
+  linhas.push("", "As batidas são registradas pelo celular, com horário do servidor e confirmação por localização, foto ou justificativa. O detalhe de cada batida está na aba \"Batidas\" do Excel.");
+  return linhas.join("\n");
+}
+$("disparar").onclick = async () => {
+  const para = $("para").value.trim(), assunto = $("assunto").value.trim() || "Relatório de ponto";
+  try { localStorage.setItem("ponto_para", para); } catch {}
+  let arq;
+  try { arq = await montarExcel(); } catch { aviso("Não consegui gerar o Excel (sem internet para carregar a biblioteca?).", "erro"); return; }
+  const corpo = corpoEmail();
+  if (navigator.canShare && navigator.canShare({ files: [arq] })) {
+    try { await navigator.share({ files: [arq], title: assunto, text: corpo }); aviso("✓ Escolha o e-mail na janela que abriu e confirme o envio."); return; }
+    catch (e) { if (e && e.name === "AbortError") { aviso("Envio cancelado.", "erro"); return; } }
+  }
+  baixar(arq);
+  const url = `mailto:${encodeURIComponent(para).replace(/%2C/g, ",").replace(/%40/g, "@")}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`;
+  window.__ultimoMailto = url; location.href = url;
+  aviso(`✓ Baixei "${arq.name}" e abri o e-mail. É só anexar o arquivo baixado e enviar.`);
+};
+
+/* ============ LOGIN ============ */
+$("entrar").onclick = async () => {
+  $("msgLogin").textContent = ""; $("entrar").disabled = true;
+  try { await B.login($("email").value.trim(), $("senha").value); } catch { $("msgLogin").textContent = "E-mail ou senha incorretos."; }
+  $("entrar").disabled = false;
+};
+$("senha").addEventListener("keydown", (e) => { if (e.key === "Enter") $("entrar").click(); });
+$("sair").onclick = () => B.logout();
+const tela = (t) => { $("login").classList.toggle("oculto", t !== "login"); $("painel").classList.toggle("oculto", t !== "painel"); $("sair").classList.toggle("oculto", t !== "painel"); };
+
+(async function iniciar() {
+  B = DEMO ? criarBackendDemo() : await criarBackendReal();
+  $("demo").classList.toggle("oculto", !DEMO);
+  B.onUser(async (u) => {
+    if (!u) { tela("login"); $("quem").textContent = ""; return; }
+    try {
+      const p = await B.perfil(u.uid);
+      if (!p || p.status !== "aprovado" || p.area !== "TI") { await B.logout(); tela("login"); $("msgLogin").textContent = "Esta página é só para a gestão (área TI)."; return; }
+      $("quem").textContent = p.nome || u.email; emissor = p.nome || u.email;
+      pessoas = await B.pessoas();
+      $("pessoa").innerHTML = '<option value="">Todas</option>' + pessoas.map((x) => `<option value="${x.uid}"></option>`).join("");
+      [...$("pessoa").options].slice(1).forEach((o, i) => { o.textContent = pessoas[i].nome; });
+      tela("painel"); await carregar();
+    } catch { tela("login"); $("msgLogin").textContent = "Não consegui carregar. Tente de novo."; }
+  });
+})();
+window.__gestao = { folhaDe, montarDias, get dados() { return dados; } };
+</script>
+</body>
+</html>
