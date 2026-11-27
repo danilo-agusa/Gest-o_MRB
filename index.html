@@ -171,8 +171,7 @@ async function criarBackendReal() {
     async perfil(uid) { const s = await F.getDoc(F.doc(db, "usuarios", uid)); return s.exists() ? s.data() : null; },
     async pessoas() { return (await F.getDocs(F.collection(db, "usuarios"))).docs.map((d) => ({ uid: d.id, nome: d.data().nome || d.data().email, status: d.data().status })).filter((p) => p.status === "aprovado"); },
     async batidas(uid, de, ate) {
-      const q = F.query(F.collection(db, "ponto", uid, "batidas"), F.where("criado_em", ">=", F.Timestamp.fromDate(de)), F.where("criado_em", "<", F.Timestamp.fromDate(ate)), F.orderBy("criado_em"));
-      return (await F.getDocs(q)).docs.map((d) => ({ id: d.id, ...d.data(), criado_em: d.data().criado_em.toDate() }));
+      return docsPeriodo(F, F.collection(db, "ponto", uid, "batidas"), de, ate);
     },
   };
 }
@@ -220,10 +219,32 @@ function montarDias(batidas) {
 
 /* ============ TELA ============ */
 let B, folha, pessoas = [], dados = [];   // dados: [{pessoa, dias, resumo}]
+// Horários lançados à mão no app (metodo "app") valem pela hora digitada (data_hora), não pela do envio.
+// Ponto batido de verdade no mesmo dia/tipo sempre vence; entre manuais vale o último enviado.
+function mesclarManuais(lista, de, ate) {
+  const reais = new Set(lista.filter((b) => b.metodo !== "app" && b.criado_em).map((b) => chaveDia(b.criado_em) + b.tipo));
+  const ult = new Map();
+  for (const b of lista) {
+    if (b.metodo !== "app") continue;
+    const ef = b.data_hora?.toDate?.(); if (!ef) continue;
+    if (de && (ef < de || ef >= ate)) continue;
+    const k = chaveDia(ef) + b.tipo; if (reais.has(k)) continue;
+    const x = { ...b, registrado_em: b.criado_em, criado_em: ef };
+    const o = ult.get(k); if (!o || x.registrado_em > o.registrado_em) ult.set(k, x);
+  }
+  return [...lista.filter((b) => b.metodo !== "app"), ...ult.values()].sort((a, b) => a.criado_em - b.criado_em);
+}
+async function docsPeriodo(F, ref, de, ate) {   // pontos reais (criado_em) + manuais do app (data_hora)
+  const T = F.Timestamp.fromDate;
+  const q = (campo) => F.getDocs(F.query(ref, F.where(campo, ">=", T(de)), F.where(campo, "<", T(ate)), F.orderBy(campo)));
+  const [a, b] = await Promise.all([q("criado_em"), q("data_hora")]);
+  const m = new Map(); [...a.docs, ...b.docs].forEach((d) => m.set(d.id, d));
+  return mesclarManuais([...m.values()].map((d) => ({ id: d.id, ...d.data(), criado_em: d.data().criado_em?.toDate?.() })), de, ate);
+}
 function tagMetodo(m, just) {
   const t = document.createElement("span");
-  t.className = "tag " + (m === "justificativa" ? "just" : "ok");
-  t.textContent = m === "gps" ? "📍 local" : m === "foto" ? "📷 foto" : m === "simples" ? "✓ horário" : (just || "justificado");
+  t.className = "tag " + (m === "justificativa" || m === "app" ? "just" : "ok");
+  t.textContent = m === "gps" ? "📍 local" : m === "foto" ? "📷 foto" : m === "simples" ? "✓ horário" : m === "app" ? "✍️ manual (app)" : (just || "justificado");
   return t;
 }
 async function carregar() {
@@ -304,7 +325,7 @@ const AZUL = "FF2D6A9F", FAIXA = "FFE8F0F8", CINZA = "FF66727F", LINHA = "FFD5DB
 const FINA = { style: "thin", color: { argb: LINHA } };
 const BORDAS = { top: FINA, left: FINA, bottom: FINA, right: FINA };
 const DIAS_SEM = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-const NOME_METODO = { gps: "Localização", foto: "Foto", justificativa: "Justificativa", simples: "Registro simples" };
+const NOME_METODO = { gps: "Localização", foto: "Foto", justificativa: "Justificativa", simples: "Registro simples", app: "Manual (app)" };
 const minDoDia = (d) => { if (!d) return null; const [h, m] = fmtHora(d).split(":").map(Number); return h * 60 + m; };
 const emissao = () => new Date().toLocaleString("pt-BR", { timeZone: FUSO, dateStyle: "short", timeStyle: "short" });
 let emissor = "";
@@ -447,7 +468,7 @@ async function montarExcel() {
     celula(bs, `B${lb}`, new Date(Date.UTC(y, m - 1, dd)), { fmt: "dd/mm/yyyy", fundo });
     celula(bs, `C${lb}`, minDoDia(b.criado_em) / 1440, { fmt: "hh:mm", fundo });
     celula(bs, `D${lb}`, NOME_TIPO[b.tipo] || b.tipo, { fundo });
-    celula(bs, `E${lb}`, NOME_METODO[b.metodo] || b.metodo, { fundo, cor: b.metodo === "justificativa" ? AMBAR : VERDE });
+    celula(bs, `E${lb}`, NOME_METODO[b.metodo] || b.metodo, { fundo, cor: (b.metodo === "justificativa" || b.metodo === "app") ? AMBAR : VERDE });
     celula(bs, `F${lb}`, b.distancia != null ? `${b.distancia} m` : null, { fundo }); celula(bs, `G${lb}`, b.precisao != null ? `±${b.precisao} m` : null, { fundo });
     celula(bs, `H${lb}`, b.justificativa || null, { al: "left", indent: 1, fundo }); lb++;
   }
